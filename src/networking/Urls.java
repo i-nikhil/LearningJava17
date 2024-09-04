@@ -11,6 +11,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
+import java.util.concurrent.CompletableFuture;
 
 public class Urls {
     public static void main(String[] args) throws URISyntaxException, IOException, InterruptedException {
@@ -53,12 +54,12 @@ public class Urls {
 
         // Create a JSON string as the request body
         String json = """
-                    {
-                        "title": "foo",
-                        "body": "bar",
-                        "userId": 1
-                    }
-                    """;
+                {
+                    "title": "foo",
+                    "body": "bar",
+                    "userId": 1
+                }
+                """;
 
         // Create a POST request
         HttpRequest request2 = HttpRequest.newBuilder()
@@ -73,6 +74,47 @@ public class Urls {
         // Print the response
         System.out.println("Response status code: " + response2.statusCode());
         System.out.println("Response body: " + response.body());
+
+        /////////////////////////////////////////////////
+        // ASYNCHRONOUS HttpClient
+        /////////////////////////////////////////////////
+
+        // Send the GET request asynchronously
+        CompletableFuture<HttpResponse<String>> responseFuture = client.sendAsync(request, HttpResponse.BodyHandlers.ofString());
+
+        // Handle the response asynchronously
+        responseFuture.thenApply(HttpResponse::body)
+                .thenAccept(body -> System.out.println("Async Response body: " + body))
+                .exceptionally(e -> {
+                    System.err.println("Error occurred: " + e.getMessage());
+                    return null;
+                })
+                .join(); // Wait for the completion and get the result
+
+        // Send the POST request asynchronously
+        CompletableFuture<HttpResponse<String>> responseFuture2 = client.sendAsync(request2, HttpResponse.BodyHandlers.ofString());
+
+        // Handle the response asynchronously
+        responseFuture2.thenApply(HttpResponse::body)
+                .thenAccept(body -> System.out.println("Async Response body: " + body))
+                .exceptionally(e -> {
+                    System.err.println("Error occurred: " + e.getMessage());
+                    return null;
+                })
+                .join(); // Wait for the completion and get the result
+
+        /*
+        Future - interface supporting asynchronous programming.
+
+        CompletableFuture - implements Future. Same as Task in C#, holds the result of an async call.
+        It's a promise of a future result.
+
+        thenApply(<callback_function>) - to process or modify the result and pass the transformed value further
+        along in the computation chain. Eg: future.thenApply(result -> result * 2);
+
+        thenAccept(<callback_function>) - to perform an action with the result (e.g., logging, printing)
+        without modifying it or returning a value. Eg: future.thenAccept(result -> sout("Result: " + result));
+         */
     }
 
     private static void printContents(InputStream s) {
